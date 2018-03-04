@@ -1,5 +1,11 @@
 var express = require('express');
 var router = express.Router();
+var firebaseAdminDB = require('../connections/firebase_admin');
+
+const ref = firebaseAdminDB.ref('any').once('value', (sanpshot)=>{
+  console.log('sanpshot', sanpshot.val());
+  
+});
 
 /* GET index page. */
 router.get('/', function(req, res, next) {
