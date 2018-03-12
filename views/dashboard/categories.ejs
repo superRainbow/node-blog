@@ -12,21 +12,21 @@
         </tr>
       </thead>
       <tbody>
-        
+        <% for(var item in categories){ %>
           <tr>
-            <td class="align-middle">心得</td>
-            <td><input type="text" class="form-control form-control-sm" value="mind"></td>
+            <td class="align-middle"><%- categories[item].name  %></td>
+            <td><input type="text" class="form-control form-control-sm" value="<%- categories[item].path  %>"></td>
             <td class="align-middle">
-              <form method="POST">
+              <form method="POST" action="/dashboard/categories/delete/<%- categories[item].id  %>">
                 <button type="submit" class="btn btn-outline-danger btn-sm">刪除</button>
               </form>
             </td>
           </tr>
-        
+        <% } %>
       </tbody>
     </table>
 
-    <form method="POST">
+    <form method="POST" action="/dashboard/categories/create">
       <table class="table">
         <tr>
           <td class="align-middle">新增</td>
