@@ -3,15 +3,53 @@ var router = express.Router();
 var firebaseAdminDB = require('../connections/firebase_admin');
 
 const categoriesRef = firebaseAdminDB.ref('categories');
+const articlesRef = firebaseAdminDB.ref('articles');
 
 /* GET archives page. */
 router.get('/archives', function(req, res, next) {
   res.render('dashboard/archives', { title: 'Express' });
 });
 
-/* GET article page. */
-router.get('/article', function(req, res, next) {
-  res.render('dashboard/article', { title: 'Express' });
+/* GET article create page. */
+router.get('/article/create', function(req, res, next) {
+  categoriesRef.once('value', (sanpshot)=>{
+    const categories = sanpshot.val();
+    res.render('dashboard/article', { title: 'Express',type: 'create', categories: categories, article: {} });
+  });
+});
+
+/* POST article create page： add */
+router.post('/article/create', function(req, res, next) {
+  const data = req.body;
+  const article = articlesRef.push();
+  data.id = article.key;
+  data.articleTime = Math.floor(Date.now()/1000);
+  article.set(data).then(()=>{
+    res.redirect(`/dashboard/article/${data.id}`);
+  })
+});
+
+/* GET article 某篇 page. */
+router.get('/article/:id', function(req, res, next) {
+  const articleID = req.param('id');
+  let categories = {};
+  categoriesRef.once('value').then(sanpshot=>{
+    categories = sanpshot.val();
+    return articlesRef.child(articleID).once('value');
+  }).then(sanpshot=>{
+    articleData = sanpshot.val();
+    res.render('dashboard/article', { title: 'Express',type: 'update', categories: categories, article: articleData });
+  });
+});
+
+/* POST article create page： add */
+router.post('/article/update/:id', function(req, res, next) {
+  const articleID = req.param('id');
+  const data = req.body;
+  data.articleTime = Math.floor(Date.now()/1000);
+  articlesRef.child(articleID).update(data).then(()=>{
+    res.redirect(`/dashboard/article/${articleID}`);
+  })
 });
 
 /* GET categories page. */
