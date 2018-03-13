@@ -1,4 +1,7 @@
 var express = require('express');
+var striptags = require('striptags');
+var moment = require('moment');
+
 var router = express.Router();
 var firebaseAdminDB = require('../connections/firebase_admin');
 
@@ -7,7 +10,22 @@ const articlesRef = firebaseAdminDB.ref('articles');
 
 /* GET archives page. */
 router.get('/archives', function(req, res, next) {
-  res.render('dashboard/archives', { title: 'Express' });
+  // 用 query來判斷tab 是哪個。ex: ?status=public
+  const status = req.query.status || 'pubic';
+  let categories = {};
+  categoriesRef.once('value').then(sanpshot=>{
+    categories = sanpshot.val();
+    return articlesRef.orderByChild('articleTime').once('value');
+  }).then(sanpshot=>{
+    let articles = [];
+    sanpshot.forEach((sanpshotChild) => {
+      const item = sanpshotChild.val();
+      if(item.status === status){
+        articles.push(item);
+      }
+    });
+    res.render('dashboard/archives', { title: 'Express', categories, articles, status, striptags, moment });
+  });
 });
 
 /* GET article create page. */
@@ -51,6 +69,16 @@ router.post('/article/update/:id', function(req, res, next) {
     res.redirect(`/dashboard/article/${articleID}`);
   })
 });
+
+/* POST article page： delete */
+router.post('/article/delete/:id', function(req, res, next) {
+  const articleID = req.param('id');
+  articlesRef.child(articleID).remove();
+  // res.redirect('/archives');
+  // ajax 回傳資訊
+  res.send('刪除成功！');
+});
+
 
 /* GET categories page. */
 router.get('/categories', function(req, res, next) {
