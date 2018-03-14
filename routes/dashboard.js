@@ -11,20 +11,47 @@ const articlesRef = firebaseAdminDB.ref('articles');
 /* GET archives page. */
 router.get('/archives', function(req, res, next) {
   // 用 query來判斷tab 是哪個。ex: ?status=public
-  const status = req.query.status || 'pubic';
+  const status = req.query.status || 'public';
+  const nowPage = req.query.page || 1;
   let categories = {};
   categoriesRef.once('value').then(sanpshot=>{
     categories = sanpshot.val();
     return articlesRef.orderByChild('articleTime').once('value');
   }).then(sanpshot=>{
     let articles = [];
+    let data = [];
     sanpshot.forEach((sanpshotChild) => {
       const item = sanpshotChild.val();
       if(item.status === status){
         articles.push(item);
       }
     });
-    res.render('dashboard/archives', { title: 'Express', categories, articles, status, striptags, moment });
+    
+    // 分頁
+    const totalArticles = articles.length;
+    const pageSize = 2;
+    const totalPages = Math.ceil(totalArticles / pageSize);
+    if(nowPage > totalPages){
+      nowPage = totalPages;
+    }
+
+    const startItem = (nowPage * pageSize) - pageSize +1;
+    const endItem = nowPage * pageSize;
+    articles.forEach((item, i)=>{
+      const nowItem = i + 1;
+      if(nowItem >= startItem && nowItem <= endItem){
+        data.push(item);
+      }
+    });
+
+    const page = {
+      totalPages,
+      nowPage,
+      hasPre: nowPage >1,
+      hasNext: nowPage < totalPages
+    };
+
+    res.render('dashboard/archives', { title: 'Express', categories, articles: data, status: status, striptags, moment, page });
   });
 });
 
