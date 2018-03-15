@@ -2,7 +2,7 @@ var express = require('express');
 var striptags = require('striptags');
 var moment = require('moment');
 var router = express.Router();
-
+const page = require('../views/core-modules/page/page');
 var firebaseAdminDB = require('../connections/firebase_admin');
 const categoriesRef = firebaseAdminDB.ref('categories');
 const articlesRef = firebaseAdminDB.ref('articles');
@@ -16,7 +16,6 @@ router.get('/', function(req, res, next) {
     return articlesRef.orderByChild('articleTime').once('value');
   }).then(sanpshot=>{
     let articles = [];
-    let data = [];
     sanpshot.forEach((sanpshotChild) => {
       const item = sanpshotChild.val();
       if(item.status === 'public'){
@@ -24,30 +23,9 @@ router.get('/', function(req, res, next) {
       }
     });
 
-    // 分頁
-    const totalArticles = articles.length;
-    const pageSize = 2;
-    const totalPages = Math.ceil(totalArticles / pageSize);
-    if(nowPage > totalPages){
-      nowPage = totalPages;
-    }
-
-    const startItem = (nowPage * pageSize) - pageSize +1;
-    const endItem = nowPage * pageSize;
-    articles.forEach((item, i)=>{
-      const nowItem = i + 1;
-      if(nowItem >= startItem && nowItem <= endItem){
-        data.push(item);
-      }
-    });
-
-    const page = {
-      totalPages,
-      nowPage,
-      hasPre: nowPage >1,
-      hasNext: nowPage < totalPages
-    };
-    res.render('index', { title: 'Express', categories, articles: data, page, striptags, moment });
+    const data = page(articles, nowPage);
+    
+    res.render('index', { title: 'Express', categories, articles: data.data, page: data.page, striptags, moment });
   });
 });
 
